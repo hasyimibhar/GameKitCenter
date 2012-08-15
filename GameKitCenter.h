@@ -1,6 +1,6 @@
 //
 //  GameKitCenter.h
-//  DeathFortress
+//  GameKitCenter
 //
 //  Created by Hasyimi Bahrudin on 8/14/12.
 //
