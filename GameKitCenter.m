@@ -57,6 +57,20 @@ BOOL IsGameCenterAPIAvailable()
 	[super dealloc];
 }
 
+- (NSDictionary *)save
+{
+    NSMutableDictionary *temp = [NSMutableDictionary dictionary];
+    [temp setObject:[NSNumber numberWithDouble:percentageCompleted] forKey:@"PercentageCompleted"];
+    return [NSDictionary dictionaryWithDictionary:temp];
+}
+
+- (void)loadFromDictionary:(NSDictionary *)dictionary
+{
+    assert([dictionary objectForKey:@"PercentageCompleted"]);
+    percentageCompleted = [[dictionary objectForKey:@"PercentageCompleted"] doubleValue];
+    assert(percentageCompleted >= 0.0 && percentageCompleted <= 100.0);
+}
+
 @end
 
 //####################################################################################
@@ -278,7 +292,7 @@ BOOL IsGameCenterAPIAvailable()
 {
     NSMutableDictionary *temp = [NSMutableDictionary dictionary];
     for (id<GameKitAchievement> achievement in achievementsList)
-        [temp setObject:[NSNumber numberWithDouble:achievement.percentageCompleted] forKey:achievement.identifier];
+        [temp setObject:[achievement save] forKey:achievement.identifier];
     
     return [NSDictionary dictionaryWithDictionary:temp];
 }
@@ -291,8 +305,7 @@ BOOL IsGameCenterAPIAvailable()
     
     for (NSString *identifier in [dictionary allKeys])
     {
-        double savedPercentageCompleted = [[dictionary objectForKey:identifier] doubleValue];
-        assert(savedPercentageCompleted >= 0.0 && savedPercentageCompleted <= 100.0);
+        NSDictionary *achievementSaveFile = [dictionary objectForKey:identifier];
         
         id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
         if (achievement == nil)
@@ -300,7 +313,10 @@ BOOL IsGameCenterAPIAvailable()
             NSLog(@"INFO: Achievement '%@' is not in the save file", identifier);
         }
         else
-            achievement.percentageCompleted = savedPercentageCompleted;
+        {
+            NSLog(@"INFO: %@ -> %.2f", identifier, [[achievementSaveFile objectForKey:@"PercentageCompleted"] doubleValue]);
+            [achievement loadFromDictionary:achievementSaveFile];
+        }
     }
 }
 

@@ -17,6 +17,9 @@
 
 - (id)initWithDictionary:(NSDictionary *)dictionary;
 
+- (NSDictionary *)save;
+- (void)loadFromDictionary:(NSDictionary *)dictionary;
+
 @property (readonly, copy, nonatomic) NSString * identifier;
 @property (readwrite, nonatomic) double percentageCompleted;
 @property (readonly, nonatomic) int points;
@@ -89,7 +92,7 @@
  */
 - (void)authenticateLocalPlayer;
 
-/** Returns the encoded achievements progress. 
+/** Returns the encoded achievements progress.
  */
 - (NSDictionary *)save;
 
