@@ -142,6 +142,5 @@
 //- (NSArray *)scoresWithPlayerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
 
 @property (readwrite, nonatomic) BOOL shouldCommunicateWithGC;
-@property (readwrite, assign, nonatomic) id<GameKitCenterDelegate> delegate;
 
 @end

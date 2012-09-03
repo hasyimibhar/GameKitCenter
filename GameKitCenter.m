@@ -136,7 +136,6 @@ BOOL IsGameCenterAPIAvailable()
 #pragma mark -
 //####################################################################################
 
-@synthesize delegate;
 @dynamic shouldCommunicateWithGC;
 
 - (BOOL)shouldCommunicateWithGC
