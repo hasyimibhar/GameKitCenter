@@ -45,6 +45,7 @@
 
 @protocol GameKitCenterDelegate<NSObject>
 - (void)localPlayerAuthenticated;
+- (void)achievementProgressed:(id<GameKitAchievement>)achievement;
 - (void)achievementsLoaded;
 - (void)achievementsReset;
 - (void)achievementCompleted:(id<GameKitAchievement>)achievement;
@@ -70,6 +71,8 @@
     BOOL shouldCommunicateWithGC;
     BOOL isSynced;
     BOOL hasChangedDevice;
+    
+    NSMutableArray *delegates;
 }
 
 /** Initializes GameKitCenter with a dictionary.
@@ -85,6 +88,14 @@
     @warning You MUST call this before deallocating GameKitCenter, or memory will be leaked.
  */
 - (void)destroy;
+
+/** Registers a class as a delegate.
+ */
+- (void)addDelegate:(id<GameKitCenterDelegate>)delegate;
+
+/** Unregisters a class as a delegate.
+ */
+- (void)removeDelegate:(id<GameKitCenterDelegate>)delegate;
 
 /** Authenticate the local player.
     This will display the login form if no local player is authenticated.

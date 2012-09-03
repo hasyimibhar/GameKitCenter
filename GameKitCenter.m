@@ -79,6 +79,8 @@ BOOL IsGameCenterAPIAvailable()
 
 @interface GameKitCenter ()
 
+- (void)invokeDelegatesWithSelector:(SEL)selector andObject:(id<NSObject>)object;
+
 /** Synchronizes Game Center's achievements with local achievements.
  This ensures that achievements on both side are equal.
  This method is automatically when the local player is authenicated.
@@ -183,6 +185,7 @@ BOOL IsGameCenterAPIAvailable()
         gkAchievementsDictionary = [[NSMutableDictionary alloc] init];
         queuedAchievements = [[NSMutableDictionary alloc] init];
         failedAchievements = [[NSMutableArray alloc] init];
+        delegates = [[NSMutableArray alloc] init];
         
         for (NSDictionary *info in achievementsInfo)
         {
@@ -228,6 +231,7 @@ BOOL IsGameCenterAPIAvailable()
 
 - (void)dealloc
 {
+    [delegates release];
     [failedAchievements release];
     [queuedAchievements release];
     [gkAchievementsDictionary release];
@@ -245,6 +249,18 @@ BOOL IsGameCenterAPIAvailable()
 - (void)destroy
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)addDelegate:(id<GameKitCenterDelegate>)delegate
+{
+    assert(![delegates containsObject:delegate]);
+    [delegates addObject:delegate];
+}
+
+- (void)removeDelegate:(id<GameKitCenterDelegate>)delegate
+{
+    assert([delegates containsObject:delegate]);
+    [delegates removeObject:delegate];
 }
 
 - (void)authenticateLocalPlayer
@@ -280,7 +296,7 @@ BOOL IsGameCenterAPIAvailable()
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(localPlayerAuthenticationChanged:) name:GKPlayerAuthenticationDidChangeNotificationName object:nil];
             
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self.delegate localPlayerAuthenticated];
+                [self invokeDelegatesWithSelector:@selector(localPlayerAuthenticated) andObject:nil];
             });
             
             [self loadGCAchievements];
@@ -380,8 +396,10 @@ BOOL IsGameCenterAPIAvailable()
             
         [queuedAchievements setObject:achievement forKey:identifier];
         
-        if (achievement.percentageCompleted == 100.0)
-            [self.delegate achievementCompleted:achievement];
+        if (percentageCompleted == 100.0)
+            [self invokeDelegatesWithSelector:@selector(achievementCompleted:) andObject:achievement];
+        else
+            [self invokeDelegatesWithSelector:@selector(achievementProgressed:) andObject:achievement];
         
         NSLog(@"INFO: Achievement report queued (ID: %@, %%completed: %.2f)", achievement.identifier, achievement.percentageCompleted);
     }
@@ -398,7 +416,7 @@ BOOL IsGameCenterAPIAvailable()
         achievement.percentageCompleted = 0.0;
     
     NSLog(@"INFO: Achievements reset.");
-    [self.delegate achievementsReset];
+    [self invokeDelegatesWithSelector:@selector(achievementsReset) andObject:nil];
     
     if (!isGCEnabled) return;
     if (!shouldCommunicateWithGC) return;
@@ -437,6 +455,14 @@ BOOL IsGameCenterAPIAvailable()
 #pragma mark Private methods
 #pragma mark -
 //####################################################################################
+
+- (void)invokeDelegatesWithSelector:(SEL)selector andObject:(id<NSObject>)object
+{
+    for (id<GameKitCenterDelegate> d in delegates)
+    {
+        [d performSelector:selector withObject:object];
+    }
+}
 
 - (void)syncAchievementsWithGameCenter
 {
@@ -635,9 +661,7 @@ BOOL IsGameCenterAPIAvailable()
                      NSLog(@"- %@", identifier);
              }
              
-             dispatch_async(dispatch_get_main_queue(), ^{
-                 [self.delegate achievementsLoaded];
-             });
+             [self invokeDelegatesWithSelector:@selector(achievementsLoaded) andObject:nil];
              
              if (!isSynced)
              {
