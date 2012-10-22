@@ -20,6 +20,9 @@
 - (NSDictionary *)save;
 - (void)loadFromDictionary:(NSDictionary *)dictionary;
 
+- (void)progressReported;
+- (void)progressFlushed;
+
 @property (readonly, copy, nonatomic) NSString * identifier;
 @property (readwrite, nonatomic) double percentageCompleted;
 @property (readonly, nonatomic) int points;
@@ -122,6 +125,8 @@
     This method does the actual reporting to Game Center.
  */
 - (void)reportQueuedAchievements;
+
+- (void)flushQueuedAchievements;
 
 /** Returns all local achievements.
  */

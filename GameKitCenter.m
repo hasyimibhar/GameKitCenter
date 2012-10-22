@@ -71,6 +71,16 @@ BOOL IsGameCenterAPIAvailable()
     assert(percentageCompleted >= 0.0 && percentageCompleted <= 100.0);
 }
 
+- (void)progressReported
+{
+    
+}
+
+- (void)progressFlushed
+{
+    
+}
+
 @end
 
 //####################################################################################
@@ -337,11 +347,15 @@ BOOL IsGameCenterAPIAvailable()
 
 - (void)reportQueuedAchievements
 {
-    if (!isGCEnabled) return;
-    if (!shouldCommunicateWithGC) return;
-    
     for (id<GameKitAchievement> achievement in [queuedAchievements allValues])
     {
+        id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
+        double percentageCompleted = [[queuedAchievements objectForKey:identifier] doubleValue];
+        achievement.percentageCompleted = percentageCompleted;
+        
+        [achievement progressReported];
+
+        
         // Ignore non-GC achievements
         GKAchievement *gkAchievement = [gkAchievementsDictionary objectForKey:achievement.identifier];
         if (gkAchievement == nil)
@@ -350,29 +364,32 @@ BOOL IsGameCenterAPIAvailable()
             continue;
         }
         
-        gkAchievement.percentComplete = achievement.percentageCompleted;
-        
-        [gkAchievement reportAchievementWithCompletionHandler:^(NSError *error)
+        if (isGCEnabled && shouldCommunicateWithGC)
         {
-            if (error)
+            gkAchievement.percentComplete = achievement.percentageCompleted;
+            
+            [gkAchievement reportAchievementWithCompletionHandler:^(NSError *error)
             {
-                NSLog(@"ERROR: Achievement report failed (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
-                
-                if (shouldManuallyReportFailedAchievements)
+                if (error)
                 {
-                    NSLog(@"INFO: Failed achievement report queued (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
-                    [failedAchievements addObject:achievement];
+                    NSLog(@"ERROR: Achievement report failed (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
                     
-                    if (!isReportFailedAchievementsScheduled)
+                    if (shouldManuallyReportFailedAchievements)
                     {
-                        [self performSelector:@selector(reportFailedAchievements) withObject:self afterDelay:10.0];
-                        isReportFailedAchievementsScheduled = YES;
+                        NSLog(@"INFO: Failed achievement report queued (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
+                        [failedAchievements addObject:achievement];
+                        
+                        if (!isReportFailedAchievementsScheduled)
+                        {
+                            [self performSelector:@selector(reportFailedAchievements) withObject:self afterDelay:10.0];
+                            isReportFailedAchievementsScheduled = YES;
+                        }
                     }
                 }
-            }
-            else
-                NSLog(@"INFO: Achievement report successful (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
-        }];
+                else
+                    NSLog(@"INFO: Achievement report successful (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
+            }];
+        }
     }
     
     [queuedAchievements removeAllObjects];
@@ -385,23 +402,37 @@ BOOL IsGameCenterAPIAvailable()
     id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
     assert(achievement);
     
-    if (percentageCompleted > achievement.percentageCompleted)
+    double currentPercentageCompleted = achievement.percentageCompleted;
+    
+    NSNumber *queuedProgress = [queuedAchievements objectForKey:identifier];
+    if (queuedProgress)
     {
-        achievement.percentageCompleted = percentageCompleted;
-        
-        id<GameKitAchievement> queuedAchievement = [queuedAchievements objectForKey:identifier];
-        if (queuedAchievement)
-            NSLog(@"INFO: Overwriting queued achievement report (ID: %@, %%completed: %.2f)", queuedAchievement.identifier, queuedAchievement.percentageCompleted);
-            
-        [queuedAchievements setObject:achievement forKey:identifier];
+        currentPercentageCompleted = [queuedProgress doubleValue];
+        NSLog(@"INFO: Overwriting queued achievement report (ID: %@, %%completed: %.2f)", identifier, currentPercentageCompleted);
+    }
+    
+    if (percentageCompleted > currentPercentageCompleted)
+    {
+        [queuedAchievements setObject:[NSNumber numberWithDouble:percentageCompleted] forKey:identifier];
         
         if (percentageCompleted == 100.0)
             [self invokeDelegatesWithSelector:@selector(achievementCompleted:) andObject:achievement];
         else
             [self invokeDelegatesWithSelector:@selector(achievementProgressed:) andObject:achievement];
         
-        NSLog(@"INFO: Achievement report queued (ID: %@, %%completed: %.2f)", achievement.identifier, achievement.percentageCompleted);
+        NSLog(@"INFO: Achievement report queued (ID: %@, %%completed: %.2f)", identifier, percentageCompleted);
     }
+}
+
+- (void)flushQueuedAchievements
+{
+    for (NSString *identifier in [queuedAchievements allKeys])
+    {
+        id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
+        [achievement progressFlushed];
+    }
+    
+    [queuedAchievements removeAllObjects];
 }
 
 - (NSArray *)achievements
@@ -413,6 +444,14 @@ BOOL IsGameCenterAPIAvailable()
 {
     for (id<GameKitAchievement> achievement in achievementsList)
         achievement.percentageCompleted = 0.0;
+    
+    NSArray *oldAchievements = [gkAchievementsDictionary allValues];
+    for (GKAchievement *achievement in oldAchievements)
+    {
+        NSString *identifier = [[achievement.identifier copy] autorelease];
+        GKAchievement *newAchievement = [[[GKAchievement alloc] initWithIdentifier:identifier] autorelease];
+        [gkAchievementsDictionary setObject:newAchievement forKey:identifier];
+    }
     
     NSLog(@"INFO: Achievements reset.");
     [self invokeDelegatesWithSelector:@selector(achievementsReset) andObject:nil];
@@ -473,10 +512,11 @@ BOOL IsGameCenterAPIAvailable()
     for (id<GameKitAchievement> achievement in [self achievements])
     {
         GKAchievement *gkAchievement = [gkAchievementsDictionary objectForKey:achievement.identifier];
-        gkAchievement.percentComplete = achievement.percentageCompleted;
         
-        if (gkAchievement)
+        if (gkAchievement && achievement.percentageCompleted > gkAchievement.percentComplete)
         {
+            gkAchievement.percentComplete = achievement.percentageCompleted;
+ 
             [gkAchievement reportAchievementWithCompletionHandler:^(NSError *error)
             {
                 if (error)
