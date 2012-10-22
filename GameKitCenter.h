@@ -43,6 +43,8 @@
 @end
 
 //####################################################################################
+// GameKitLeaderboard protocol
+//####################################################################################
 
 @protocol GameKitLeaderboard <NSObject>
 
@@ -65,6 +67,10 @@
 
 @end
 
+//####################################################################################
+// Default leaderboard class
+//####################################################################################
+
 @interface StandardGameKitLeaderboard : NSObject<GameKitLeaderboard>
 {
     NSString *identifier;
@@ -80,6 +86,10 @@
 
 @end
 
+//####################################################################################
+// GameKitScore protocol
+//####################################################################################
+
 @protocol GameKitScore <NSObject, NSCoding>
 
 - (id)initWithPlayerID:(NSString *)aPlayerID leaderboardID:(NSString *)aLeaderboardID date:(NSDate *)aDate value:(double)aValue formattedValue:(NSString *)aFormattedValue rank:(int)aRank;
@@ -92,6 +102,10 @@
 @property (readonly, nonatomic) int rank;
 
 @end
+
+//####################################################################################
+// Default score class
+//####################################################################################
 
 @interface StandardGameKitScore : NSObject<GameKitScore>
 {
@@ -197,6 +211,9 @@
  */
 - (void)reportQueuedAchievements;
 
+/** Flushes queued achievements.
+ Discards unreported achievements waiting on the queue.
+ */
 - (void)flushQueuedAchievements;
 
 /** Returns all local achievements.
@@ -207,9 +224,7 @@
  */
 - (void)resetAchievements;
 
-/** Reports a score.
-    @warning This method DOES NOT report the score to Game Center nor does it save the score locally.
-    @warning The actual reporting and saving is done when processQueuedScores is called.
+/** Reports a score, locally and also to the GC.
  */
 - (void)reportScore:(double)aScore leaderboardID:(NSString *)aLeaderboardID;
 
