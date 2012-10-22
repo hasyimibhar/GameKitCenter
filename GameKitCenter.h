@@ -43,6 +43,69 @@
 @end
 
 //####################################################################################
+
+@protocol GameKitLeaderboard <NSObject>
+
+- (id)initWithDictionary:(NSDictionary *)aDictionary;
+
+- (BOOL)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue;
+- (void)removeAllScores;
+
+- (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
+- (NSArray *)scoresWithPlayerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
+
+- (NSDictionary *)save;
+- (void)loadFromDictionary:(NSDictionary *)dictionary;
+
+@property (readonly, copy, nonatomic) NSString * name;
+@property (readonly, copy, nonatomic) NSString * scoreFormatSuffixSingular;
+@property (readonly, copy, nonatomic) NSString * scoreFormatSuffixPlural;
+@property (readonly, copy, nonatomic) NSString * identifier;
+@property (readonly, nonatomic) NSRange scoreRange;
+
+@end
+
+@interface StandardGameKitLeaderboard : NSObject<GameKitLeaderboard>
+{
+    NSString *identifier;
+    NSString *name;
+    NSString *scoreFormatSuffixSingular;
+    NSString *scoreFormatSuffixPlural;
+    NSRange scoreRange;
+    
+    NSMutableArray *scores;
+}
+
++ (id)leaderboardWithDictionary:(NSDictionary *)aDictionary;
+
+@end
+
+@protocol GameKitScore <NSObject, NSCoding>
+
+- (id)initWithPlayerID:(NSString *)aPlayerID leaderboardID:(NSString *)aLeaderboardID date:(NSDate *)aDate value:(double)aValue formattedValue:(NSString *)aFormattedValue rank:(int)aRank;
+
+@property (readonly, copy, nonatomic) NSString * playerID;
+@property (readonly, copy, nonatomic) NSString * leaderboardID;
+@property (readonly, copy, nonatomic) NSDate * date;
+@property (readonly, nonatomic) double value;
+@property (readonly, copy, nonatomic) NSString * formattedValue;
+@property (readonly, nonatomic) int rank;
+
+@end
+
+@interface StandardGameKitScore : NSObject<GameKitScore>
+{
+    NSString *playerID;
+    NSString *leaderboardID;
+    NSDate *date;
+    double value;
+    NSString *formattedValue;
+    int rank;
+}
+
+@end
+
+//####################################################################################
 // GameKitCenterDelegate protocol
 //####################################################################################
 
@@ -68,6 +131,9 @@
     NSMutableDictionary *queuedAchievements;
     NSMutableArray *failedAchievements;
     
+    NSMutableDictionary *leaderboardDictionary;
+    NSMutableArray *gkScores;
+    
     BOOL isGCEnabled;
     BOOL isGCSupported;
     
@@ -80,12 +146,17 @@
 
 /** Initializes GameKitCenter with a dictionary.
  */
-- (id)initWithDictionaries:(NSArray *)achievementsInfo;
+- (id)initWithDictionary:(NSDictionary *)aDictionary;
 
 /** Creates an autoreleased achievement object with a dictionary.
     Override this method to use your own custom achievement class.
  */
 - (id<GameKitAchievement>)achievementWithDictionary:(NSDictionary *)dictionary;
+
+/** Creates an autoreleased leaderboard object with a dictionary.
+ Override this method to use your own custom leaderboard class.
+ */
+- (id<GameKitLeaderboard>)leaderboardWithDictionary:(NSDictionary *)dictionary;
 
 /** Unregisters GameKitCenter form NSNotificationCenter.
     @warning You MUST call this before deallocating GameKitCenter, or memory will be leaked.
@@ -140,7 +211,7 @@
     @warning This method DOES NOT report the score to Game Center nor does it save the score locally.
     @warning The actual reporting and saving is done when processQueuedScores is called.
  */
-- (void)reportScore:(int64_t)score forCategory:(NSString *)category;
+- (void)reportScore:(double)aScore leaderboardID:(NSString *)aLeaderboardID;
 
 //- (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
 //

@@ -83,6 +83,257 @@ BOOL IsGameCenterAPIAvailable()
 
 @end
 
+@implementation StandardGameKitLeaderboard
+
++ (id)leaderboardWithDictionary:(NSDictionary *)aDictionary
+{
+    return [[[self alloc] initWithDictionary:aDictionary] autorelease];
+}
+
+@synthesize name, scoreFormatSuffixSingular, scoreFormatSuffixPlural, identifier, scoreRange;
+
+- (id)initWithDictionary:(NSDictionary *)aDictionary
+{
+	if ((self = [super init]))
+	{
+        assert(aDictionary[@"Identifier"]);
+        identifier = [aDictionary[@"Identifier"] copy];
+        
+        assert(aDictionary[@"Name"]);
+        name = [aDictionary[@"Name"] copy];
+        
+        assert(aDictionary[@"ScoreFormatSuffixSingular"]);
+        scoreFormatSuffixSingular = [aDictionary[@"ScoreFormatSuffixSingular"] copy];
+        
+        assert(aDictionary[@"ScoreFormatSuffixPlural"]);
+        scoreFormatSuffixPlural = [aDictionary[@"ScoreFormatSuffixPlural"] copy];
+        
+        assert(aDictionary[@"ScoreRange"]);
+        scoreRange = NSRangeFromString(aDictionary[@"ScoreRange"]);
+        
+        scores = [[NSMutableArray alloc] init];
+	}
+	
+	return self;
+}
+
+- (void)dealloc
+{
+    [scores release];
+    [scoreFormatSuffixPlural release];
+    [scoreFormatSuffixSingular release];
+    [name release];
+    [identifier release];
+	[super dealloc];
+}
+
+- (BOOL)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue
+{
+    if (!NSLocationInRange((NSUInteger)aValue, scoreRange))
+    {
+        return NO;
+    }
+    
+    StandardGameKitScore *existingScore = nil;
+    
+    for (StandardGameKitScore *aScore in scores)
+    {
+        if ([aScore.playerID isEqualToString:aPlayerID])
+        {
+            existingScore = aScore;
+            break;
+        }
+    }
+    
+    if (existingScore && existingScore.value >= aValue)
+    {
+        return NO;
+    }
+    
+    StandardGameKitScore *score = [[[StandardGameKitScore alloc] initWithPlayerID:aPlayerID leaderboardID:identifier date:[NSDate date] value:aValue formattedValue:@"" rank:0] autorelease];
+
+    [scores addObject:score];
+    return YES;
+}
+
+- (void)removeAllScores
+{
+    [scores removeAllObjects];
+}
+
+- (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
+{
+    NSMutableArray *filteredScores = [NSMutableArray array];
+    for (StandardGameKitScore *aScore in scores)
+    {
+        // 1. check player scope
+        if (![playerIDs containsObject:aScore.playerID]) continue;
+        
+        // 2. check time scopre
+        
+        [filteredScores addObject:aScore];
+    }
+    
+    [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+       
+        StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+        StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+        if (score1.value < score2.value)
+            return NSOrderedDescending;
+        if (score1.value > score2.value)
+            return NSOrderedAscending;
+        return NSOrderedSame;
+        
+    }];
+    
+    //If out of range, remove the rest
+//    while (!NSLocationInRange(filteredScores.count, scoreRange))
+//        [filteredScores removeLastObject];
+    
+    return [NSArray arrayWithArray:filteredScores];
+}
+
+- (NSArray *)scoresWithPlayerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
+{
+    NSMutableArray *filteredScores = [NSMutableArray array];
+    for (StandardGameKitScore *aScore in scores)
+    {
+        // 1. check player scope
+        // 2. check time scopre
+        
+        [filteredScores addObject:aScore];
+    }
+    
+    //If out of range, remove the rest
+//    while (!NSLocationInRange(filteredScores.count, scoreRange))
+//        [filteredScores removeLastObject];
+    
+    [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        
+        StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+        StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+        if (score1.value < score2.value)
+            return NSOrderedDescending;
+        if (score1.value > score2.value)
+            return NSOrderedAscending;
+        return NSOrderedSame;
+        
+    }];
+    
+    return [NSArray arrayWithArray:filteredScores];
+}
+
+- (NSDictionary *)save
+{
+    NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+    dictionary[@"Identifier"] = identifier;
+    dictionary[@"Name"] = name;
+    dictionary[@"ScoreFormatSuffixSingular"] = scoreFormatSuffixSingular;
+    dictionary[@"ScoreFormatSuffixPlural"] = scoreFormatSuffixPlural;
+    dictionary[@"ScoreRange"] = NSStringFromRange(scoreRange);
+    dictionary[@"Scores"] = scores;
+    return dictionary;
+}
+
+- (void)loadFromDictionary:(NSDictionary *)aDictionary
+{
+//    [identifier release];
+//    identifier = [aDictionary[@"Identifier"] copy];
+//    
+//    [name release];
+//    name = [aDictionary[@"Name"] copy];
+//    
+//    [scoreFormatSuffixSingular release];
+//    scoreFormatSuffixSingular = [aDictionary[@"ScoreFormatSuffixSingular"] copy];
+//    
+//    [scoreFormatSuffixPlural release];
+//    scoreFormatSuffixPlural = [aDictionary[@"ScoreFormatSuffixPlural"] copy];
+//    
+//    scoreRange = NSRangeFromString(aDictionary[@"ScoreRange"]);
+    
+    [scores release];
+    scores = [aDictionary[@"Scores"] retain];
+}
+
+@end
+
+@implementation StandardGameKitScore
+
+@synthesize playerID, leaderboardID, date, value, formattedValue, rank;
+
+- (id)initWithPlayerID:(NSString *)aPlayerID leaderboardID:(NSString *)aLeaderboardID date:(NSDate *)aDate value:(double)aValue formattedValue:(NSString *)aFormattedValue rank:(int)aRank
+{
+    if ((self = [super init]))
+	{
+        assert(aPlayerID);
+        playerID = [aPlayerID copy];
+        
+        assert(aLeaderboardID);
+        leaderboardID = [aLeaderboardID copy];
+        
+        assert(aDate);
+        date = [aDate copy];
+        
+        assert(aValue > 0);
+        value = aValue;
+        
+        assert(aFormattedValue);
+        formattedValue = [aFormattedValue copy];
+        
+        assert(rank >= 0);
+        rank = aRank;
+	}
+	
+	return self;
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder
+{
+    if ((self = [super init]))
+    {
+        playerID = [[aDecoder decodeObjectForKey:@"PlayerID"] retain];
+        assert(playerID);
+        
+        leaderboardID = [[aDecoder decodeObjectForKey:@"LeaderboardID"] retain];
+        assert(leaderboardID);
+        
+        date = [[aDecoder decodeObjectForKey:@"Date"] retain];
+        assert(date);
+        
+        value = [aDecoder decodeDoubleForKey:@"Value"];
+        assert(value > 0);
+        
+        formattedValue = [[aDecoder decodeObjectForKey:@"FormattedValue"] retain];
+        assert(formattedValue);
+        
+        rank = [aDecoder decodeIntForKey:@"Rank"];
+        assert(rank >= 0);
+    }
+    
+    return self;
+}
+
+- (void)dealloc
+{
+    [formattedValue release];
+    [date release];
+    [leaderboardID release];
+    [playerID release];
+    [super dealloc];
+}
+
+- (void)encodeWithCoder:(NSCoder *)aCoder
+{
+    [aCoder encodeObject:playerID forKey:@"PlayerID"];
+    [aCoder encodeObject:leaderboardID forKey:@"LeaderboardID"];
+    [aCoder encodeObject:date forKey:@"Date"];
+    [aCoder encodeDouble:value forKey:@"Value"];
+    [aCoder encodeObject:formattedValue forKey:@"FormattedValue"];
+    [aCoder encodeInt:rank forKey:@"Rank"];
+}
+
+@end
+
 //####################################################################################
 // GameKitCenter private methods
 //####################################################################################
@@ -97,17 +348,17 @@ BOOL IsGameCenterAPIAvailable()
  */
 - (void)syncAchievementsWithGameCenter;
 
-/** Synchronizes Game Center's scores with local scores.
- This ensures that scores on both side are equal.
- This method is automatically when the local player is authenicated.
- */
-- (void)syncScoresWithGameCenter;
-
 /** Reports achievements that failed to be submitted to GC.
     This method will be scheduled automatically.
     This method is only used for iOS 4.3 and lower.
  */
 - (void)reportFailedAchievements;
+
+/** Synchronizes Game Center's leaderboards with local leaderboards.
+ This ensures that leaderboards on both side are equal.
+ This method is automatically when the local player is authenicated.
+ */
+- (void)syncLeaderboardsWithGameCenter;
 
 /** Loads achievements progress from GC.
  */
@@ -129,6 +380,16 @@ BOOL IsGameCenterAPIAvailable()
 /** Popups a UIAlertView which provides the option to open Game Center app.
  */
 - (void)popupGCAlert;
+
+/** Loads leaderboards from GC.
+ */
+- (void)loadGCLeaderboards;
+
+/** Compares the local leaderboards with the GC achievements.
+ Warnings will be issued when leaderboards on both sides are inconsistent.
+ */
+- (void)compareLeaderboardsWithGameCenter;
+
 @end
 
 //####################################################################################
@@ -185,16 +446,21 @@ BOOL IsGameCenterAPIAvailable()
     }
 }
 
-- (id)initWithDictionaries:(NSArray *)achievementsInfo
+- (id)initWithDictionary:(NSDictionary *)aDictionary
 {
 	if ((self = [super init]))
 	{
+        // Initialize achievements ------------
+        
         achievementsList = [[NSMutableArray alloc] init];
         achievementsDictionary = [[NSMutableDictionary alloc] init];
         gkAchievementsDictionary = [[NSMutableDictionary alloc] init];
         queuedAchievements = [[NSMutableDictionary alloc] init];
         failedAchievements = [[NSMutableArray alloc] init];
         delegates = [[NSMutableArray alloc] init];
+        
+        NSArray *achievementsInfo = aDictionary[@"Achievements"];
+        assert(achievementsInfo);
         
         for (NSDictionary *info in achievementsInfo)
         {
@@ -203,6 +469,23 @@ BOOL IsGameCenterAPIAvailable()
             [achievementsDictionary setObject:achievement forKey:achievement.identifier];
             [achievementsList addObject:achievement];
         }
+        
+        // Initialize leaderboards -----------------------
+        
+        leaderboardDictionary = [[NSMutableDictionary alloc] init];
+        gkScores = [[NSMutableArray alloc] init];
+        
+        NSArray *leaderboardsInfo = aDictionary[@"Leaderboards"];
+        assert(leaderboardsInfo);
+        
+        for (NSDictionary *info in leaderboardsInfo)
+        {
+            id<GameKitLeaderboard> leaderboard = [self leaderboardWithDictionary:info];
+            assert(leaderboardDictionary[leaderboard.identifier] == nil);
+            [leaderboardDictionary setObject:leaderboard forKey:leaderboard.identifier];
+        }
+        
+        // -----------------------------------------------
         
         if (IsGameCenterAPIAvailable())
         {
@@ -240,6 +523,9 @@ BOOL IsGameCenterAPIAvailable()
 
 - (void)dealloc
 {
+    [gkScores release];
+    [leaderboardDictionary release];
+    
     [delegates release];
     [failedAchievements release];
     [queuedAchievements release];
@@ -253,6 +539,11 @@ BOOL IsGameCenterAPIAvailable()
 - (id<GameKitAchievement>)achievementWithDictionary:(NSDictionary *)dictionary
 {
     return [StandardGameKitAchievement achievementWithDictionary:dictionary];
+}
+
+- (id<GameKitLeaderboard>)leaderboardWithDictionary:(NSDictionary *)dictionary
+{
+    return [StandardGameKitLeaderboard leaderboardWithDictionary:dictionary];
 }
 
 - (void)destroy
@@ -309,17 +600,25 @@ BOOL IsGameCenterAPIAvailable()
             });
             
             [self loadGCAchievements];
+            [self loadGCLeaderboards];
         }
     }];
 }
 
 - (NSDictionary *)save
 {
-    NSMutableDictionary *temp = [NSMutableDictionary dictionary];
+    NSMutableDictionary *_achievements = [NSMutableDictionary dictionary];
     for (id<GameKitAchievement> achievement in achievementsList)
-        [temp setObject:[achievement save] forKey:achievement.identifier];
+        [_achievements setObject:[achievement save] forKey:achievement.identifier];
     
-    return [NSDictionary dictionaryWithDictionary:temp];
+    NSMutableDictionary *_leaderboards = [NSMutableDictionary dictionary];
+    for (NSString *key in [leaderboardDictionary allKeys])
+    {
+        id<GameKitLeaderboard> leaderboard = leaderboardDictionary[key];
+        [_leaderboards setObject:[leaderboard save] forKey:leaderboard.identifier];
+    }
+    
+    return @{ @"Achievements" : _achievements, @"Leaderboards" : _leaderboards };
 }
 
 - (void)loadFromDictionary:(NSDictionary *)dictionary
@@ -327,10 +626,12 @@ BOOL IsGameCenterAPIAvailable()
     assert(dictionary);
     
     NSLog(@"INFO: Loading saved achievements...");
+    NSDictionary *_achievements = dictionary[@"Achievements"];
+    assert(_achievements);
     
-    for (NSString *identifier in [dictionary allKeys])
+    for (NSString *identifier in [_achievements allKeys])
     {
-        NSDictionary *achievementSaveFile = [dictionary objectForKey:identifier];
+        NSDictionary *achievementSaveFile = [_achievements objectForKey:identifier];
         
         id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
         if (achievement == nil)
@@ -343,11 +644,30 @@ BOOL IsGameCenterAPIAvailable()
             [achievement loadFromDictionary:achievementSaveFile];
         }
     }
+    
+    NSLog(@"INFO: Loading saved leaderboards...");
+    NSDictionary *_leaderboards = dictionary[@"Leaderboards"];
+    assert(_leaderboards);
+    
+    for (NSString *identifier in [_leaderboards allKeys])
+    {
+        NSDictionary *leaderboardsSaveFile = _leaderboards[identifier];
+        
+        id<GameKitLeaderboard> leaderboard = leaderboardDictionary[identifier];
+        if (leaderboard == nil)
+        {
+            NSLog(@"INFO: Leaderboard '%@' is not in the save file", identifier);
+        }
+        else
+        {
+            [leaderboard loadFromDictionary:leaderboardsSaveFile];
+        }
+    }
 }
 
 - (void)reportQueuedAchievements
 {
-    for (id<GameKitAchievement> achievement in [queuedAchievements allValues])
+    for (NSString *identifier in [queuedAchievements allKeys])
     {
         id<GameKitAchievement> achievement = [achievementsDictionary objectForKey:identifier];
         double percentageCompleted = [[queuedAchievements objectForKey:identifier] doubleValue];
@@ -470,9 +790,32 @@ BOOL IsGameCenterAPIAvailable()
     }];
 }
 
-- (void)reportScore:(int64_t)score forCategory:(NSString *)category
+- (void)reportScore:(double)aScore leaderboardID:(NSString *)aLeaderboardID
 {
+    id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aLeaderboardID];
+    assert(leaderboard);
+    [leaderboard addScoreWithPlayerID:[[GKLocalPlayer localPlayer] playerID] andValue:aScore];
     
+    if (!isGCEnabled) return;
+    if (!shouldCommunicateWithGC) return;
+    
+    GKScore *scoreReporter = [[GKScore alloc] initWithCategory:aLeaderboardID];
+    
+    scoreReporter.value = aScore;
+    scoreReporter.context = 0;
+    
+    [scoreReporter reportScoreWithCompletionHandler:^(NSError *error) {
+
+        if (error != nil)
+        {
+            [self handleError:error];
+        }
+        else
+        {
+            NSLog(@"INFO: Leaderboard report successful (ID: %@, playerID: %@, value: %.2f)", leaderboard.identifier, [[GKLocalPlayer localPlayer] playerID], aScore);
+        }
+        
+    }];
 }
 
 //####################################################################################
@@ -530,10 +873,46 @@ BOOL IsGameCenterAPIAvailable()
     }
 }
 
-- (void)syncScoresWithGameCenter
+- (void)syncLeaderboardsWithGameCenter
 {
     if (!isGCEnabled) return;
     if (!shouldCommunicateWithGC) return;
+    
+    NSLog(@"INFO: Syncing leaderboards with GC...");
+    
+    for (GKScore *aScore in gkScores)
+    {
+        id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aScore.category];
+        
+        if (leaderboard)
+        {
+            NSArray *scores = [leaderboard scoresWithPlayerIDs:@[aScore.playerID] timeScope:GKLeaderboardTimeScopeAllTime range:NSMakeRange(1, 2)];
+            if (scores.count > 0)
+            {
+                id<GameKitScore> _score = (id<GameKitScore>)scores[0];
+                if (_score.value > (double)aScore.value)
+                {
+                    GKScore *scoreReporter = [[GKScore alloc] initWithCategory:aScore.category];
+                    scoreReporter.value = (int64_t)_score.value;
+                    scoreReporter.context = 0;
+                    
+                    [scoreReporter reportScoreWithCompletionHandler:^(NSError *error)
+                    {
+                        if (error)
+                        {
+                            [self handleError:error];
+                        }
+                        else
+                        {
+                            NSLog(@"INFO: Sync leaderboard succesful (ID: %@, playerID: %@, value: %.2f)", _score.leaderboardID, _score.playerID, _score.value);
+                        }
+                    }];
+                    
+                    [scoreReporter release];
+                }
+            }
+        }
+    }
 }
 
 - (void)reportFailedAchievements
@@ -639,6 +1018,48 @@ BOOL IsGameCenterAPIAvailable()
     }];
 }
 
+- (void)loadGCLeaderboards
+{
+    if (!isGCEnabled) return;
+    if (!shouldCommunicateWithGC) return;
+    
+    GKLeaderboard *leaderboardRequest = [[GKLeaderboard alloc] init];
+    assert(leaderboardRequest);
+    
+    leaderboardRequest.playerScope = GKLeaderboardPlayerScopeGlobal;
+    leaderboardRequest.timeScope = GKLeaderboardTimeScopeAllTime;
+    leaderboardRequest.category = nil;
+    leaderboardRequest.range = NSMakeRange(1, 100);
+    [leaderboardRequest loadScoresWithCompletionHandler: ^(NSArray *scores, NSError *error)
+    {
+        if (error != nil)
+        {
+            [self handleError:error];
+        }
+        
+        if (scores != nil)
+        {
+            [gkScores removeAllObjects];
+            
+            for (GKScore *aScore in scores)
+            {
+                id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aScore.category];
+                assert(leaderboard);
+                
+                [gkScores addObject:aScore];
+                
+                NSLog(@"INFO: Found score (ID: %@, player: %@, value: %.2f)", aScore.category, aScore.playerID, (double)aScore.value);
+                
+                [leaderboard addScoreWithPlayerID:aScore.playerID andValue:aScore.value];
+            }
+            
+            [self compareLeaderboardsWithGameCenter];
+        }
+    }];
+    
+    [leaderboardRequest release];
+}
+
 - (void)compareAchievementsWithGameCenter
 {
     if (!isGCEnabled) return;
@@ -713,6 +1134,14 @@ BOOL IsGameCenterAPIAvailable()
              }
          }
      }];
+}
+
+- (void)compareLeaderboardsWithGameCenter
+{
+    if (!isGCEnabled) return;
+    if (!shouldCommunicateWithGC) return;
+    
+    [self syncLeaderboardsWithGameCenter];
 }
 
 - (void)localPlayerAuthenticationChanged:(NSNotification *)notification
