@@ -228,9 +228,9 @@
  */
 - (void)reportScore:(double)aScore leaderboardID:(NSString *)aLeaderboardID;
 
-//- (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
-//
-//- (NSArray *)scoresWithPlayerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
+- (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
+
+- (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
 
 @property (readwrite, nonatomic) BOOL shouldCommunicateWithGC;
 

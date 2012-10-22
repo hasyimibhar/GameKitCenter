@@ -169,10 +169,24 @@ BOOL IsGameCenterAPIAvailable()
         // 1. check player scope
         if (![playerIDs containsObject:aScore.playerID]) continue;
         
-        // 2. check time scopre
+        // 2. check time scope
+        if (timeScope != GKLeaderboardTimeScopeAllTime)
+        {
+            NSDate *currentDate = [NSDate date];
+            NSDate *date = aScore.date;
+            
+            if (timeScope == GKLeaderboardTimeScopeToday && ![date isEqualToDate:currentDate])
+                continue;
+            else if (timeScope == GKLeaderboardTimeScopeWeek && [date timeIntervalSinceNow] > 60 * 24 * 7)
+                continue;
+        }
         
         [filteredScores addObject:aScore];
     }
+    
+    //If out of range, remove the rest
+    while (!NSLocationInRange(filteredScores.count, range))
+        [filteredScores removeLastObject];
     
     [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
        
@@ -186,27 +200,51 @@ BOOL IsGameCenterAPIAvailable()
         
     }];
     
-    //If out of range, remove the rest
-//    while (!NSLocationInRange(filteredScores.count, scoreRange))
-//        [filteredScores removeLastObject];
-    
     return [NSArray arrayWithArray:filteredScores];
 }
 
 - (NSArray *)scoresWithPlayerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
 {
     NSMutableArray *filteredScores = [NSMutableArray array];
+    NSArray *friends = [[GKLocalPlayer localPlayer] friends];
+    
     for (StandardGameKitScore *aScore in scores)
     {
         // 1. check player scope
-        // 2. check time scopre
+        BOOL isFriend = NO;
+        
+        if (playerScope == GKLeaderboardPlayerScopeFriendsOnly)
+        {
+            for (GKPlayer *aFriend in friends)
+            {
+                if ([aScore.playerID isEqualToString:aFriend.playerID])
+                {
+                    isFriend = YES;
+                    break;
+                }
+            }
+        }
+        
+        if (!isFriend) continue;
+        
+        // 2. check time scope
+        if (timeScope != GKLeaderboardTimeScopeAllTime)
+        {
+            NSDate *currentDate = [NSDate date];
+            NSDate *date = aScore.date;
+            
+            if (timeScope == GKLeaderboardTimeScopeToday && ![date isEqualToDate:currentDate])
+                continue;
+            else if (timeScope == GKLeaderboardTimeScopeWeek && [date timeIntervalSinceNow] > 60 * 24 * 7)
+                continue;
+        }
         
         [filteredScores addObject:aScore];
     }
     
     //If out of range, remove the rest
-//    while (!NSLocationInRange(filteredScores.count, scoreRange))
-//        [filteredScores removeLastObject];
+    while (!NSLocationInRange(filteredScores.count, range))
+        [filteredScores removeLastObject];
     
     [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         
@@ -818,6 +856,22 @@ BOOL IsGameCenterAPIAvailable()
     }];
 }
 
+- (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
+{
+    id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aLeaderboardID];
+    assert(leaderboard);
+    
+    return [leaderboard scoresWithPlayerIDs:playerIDs timeScope:timeScope range:range];
+}
+
+- (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
+{
+    id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aLeaderboardID];
+    assert(leaderboard);
+    
+    return [leaderboard scoresWithPlayerScope:playerScope timeScope:timeScope range:range];
+}
+
 //####################################################################################
 #pragma mark Protocol methods
 #pragma mark -
@@ -886,7 +940,7 @@ BOOL IsGameCenterAPIAvailable()
         
         if (leaderboard)
         {
-            NSArray *scores = [leaderboard scoresWithPlayerIDs:@[aScore.playerID] timeScope:GKLeaderboardTimeScopeAllTime range:NSMakeRange(1, 2)];
+            NSArray *scores = [leaderboard scoresWithPlayerIDs:@[aScore.playerID] timeScope:GKLeaderboardTimeScopeAllTime range:NSMakeRange(1, 1)];
             if (scores.count > 0)
             {
                 id<GameKitScore> _score = (id<GameKitScore>)scores[0];
