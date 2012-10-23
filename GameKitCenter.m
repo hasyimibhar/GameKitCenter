@@ -127,30 +127,24 @@ BOOL IsGameCenterAPIAvailable()
 	[super dealloc];
 }
 
-- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue
+- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue andDate:(NSDate *)aDate
 {
     if (!NSLocationInRange((NSUInteger)aValue, scoreRange))
     {
         return nil;
     }
     
-//    StandardGameKitScore *existingScore = nil;
-//    
-//    for (StandardGameKitScore *aScore in scores)
-//    {
-//        if ([aScore.playerID isEqualToString:aPlayerID])
-//        {
-//            existingScore = aScore;
-//            break;
-//        }
-//    }
-//    
-//    if (existingScore && existingScore.value >= aValue)
-//    {
-//        return nil;
-//    }
-    
-    StandardGameKitScore *score = [[[StandardGameKitScore alloc] initWithPlayerID:aPlayerID leaderboardID:identifier date:[NSDate date] value:aValue formattedValue:@"" rank:0] autorelease];
+    for (StandardGameKitScore *aScore in scores)
+    {
+        // If the playerID and time stamp are the same, then this
+        // score has already been added, so ignore it!
+        if ([aScore.playerID isEqualToString:aPlayerID] && [aScore.date isEqualToDate:aDate])
+        {
+            return nil;
+        }
+    }
+
+    StandardGameKitScore *score = [[[StandardGameKitScore alloc] initWithPlayerID:aPlayerID leaderboardID:identifier date:aDate value:aValue formattedValue:@"" rank:0] autorelease];
 
     [scores addObject:score];
     return score;
@@ -664,6 +658,8 @@ BOOL IsGameCenterAPIAvailable()
     localPlayer = [GKLocalPlayer localPlayer];
     [localPlayer authenticateWithCompletionHandler:^(NSError *error)
     {
+        INVOKE_ON_MAIN_THREAD_BEGIN();
+        
         if (!localPlayer.isAuthenticated)
         {
             if (error.code != GKErrorAuthenticationInProgress)
@@ -695,6 +691,8 @@ BOOL IsGameCenterAPIAvailable()
             [self loadGCAchievements];
             [self loadGCLeaderboards];
         }
+        
+        INVOKE_ON_MAIN_THREAD_END();
     }];
 }
 
@@ -789,6 +787,8 @@ BOOL IsGameCenterAPIAvailable()
                     
                     if (shouldManuallyReportFailedAchievements)
                     {
+                        INVOKE_ON_MAIN_THREAD_BEGIN();
+                        
                         NSLog(@"INFO: Failed achievement report queued (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
                         [failedAchievements addObject:achievement];
                         
@@ -797,6 +797,8 @@ BOOL IsGameCenterAPIAvailable()
                             [self performSelector:@selector(reportFailedAchievements) withObject:self afterDelay:10.0];
                             isReportFailedAchievementsScheduled = YES;
                         }
+                        
+                        INVOKE_ON_MAIN_THREAD_END();
                     }
                 }
                 else
@@ -874,12 +876,16 @@ BOOL IsGameCenterAPIAvailable()
     
     [GKAchievement resetAchievementsWithCompletionHandler:^(NSError *error)
     {
+        INVOKE_ON_MAIN_THREAD_BEGIN();
+        
         if (error)
             [self handleError:error];
         else
         {
             NSLog(@"INFO: GC achievements reset");
         }
+        
+        INVOKE_ON_MAIN_THREAD_END();
     }];
 }
 
@@ -887,7 +893,7 @@ BOOL IsGameCenterAPIAvailable()
 {
     id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aLeaderboardID];
     assert(leaderboard);
-    id<GameKitScore> score = [leaderboard addScoreWithPlayerID:[[GKLocalPlayer localPlayer] playerID] andValue:aScore];
+    id<GameKitScore> score = [leaderboard addScoreWithPlayerID:[[GKLocalPlayer localPlayer] playerID] andValue:aScore andDate:[NSDate date]];
     
     if (score)
     {
@@ -902,8 +908,10 @@ BOOL IsGameCenterAPIAvailable()
     scoreReporter.value = aScore;
     scoreReporter.context = 0;
     
-    [scoreReporter reportScoreWithCompletionHandler:^(NSError *error) {
-
+    [scoreReporter reportScoreWithCompletionHandler:^(NSError *error)
+    {
+        INVOKE_ON_MAIN_THREAD_BEGIN();
+        
         if (error != nil)
         {
             [self handleError:error];
@@ -913,6 +921,7 @@ BOOL IsGameCenterAPIAvailable()
             NSLog(@"INFO: Leaderboard report successful (ID: %@, playerID: %@, value: %.2f)", leaderboard.identifier, [[GKLocalPlayer localPlayer] playerID], aScore);
         }
         
+        INVOKE_ON_MAIN_THREAD_END();
     }];
 }
 
@@ -976,12 +985,16 @@ BOOL IsGameCenterAPIAvailable()
  
             [gkAchievement reportAchievementWithCompletionHandler:^(NSError *error)
             {
+                INVOKE_ON_MAIN_THREAD_BEGIN();
+                
                 if (error)
                     [self handleError:error];
                 else
                 {
                     NSLog(@"INFO: Sync achievement succesful (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
                 }
+                
+                INVOKE_ON_MAIN_THREAD_END();
             }];
         }
     }
@@ -1012,6 +1025,8 @@ BOOL IsGameCenterAPIAvailable()
                     
                     [scoreReporter reportScoreWithCompletionHandler:^(NSError *error)
                     {
+                        INVOKE_ON_MAIN_THREAD_BEGIN();
+                        
                         if (error)
                         {
                             [self handleError:error];
@@ -1020,6 +1035,8 @@ BOOL IsGameCenterAPIAvailable()
                         {
                             NSLog(@"INFO: Sync leaderboard succesful (ID: %@, playerID: %@, value: %.2f)", _score.leaderboardID, _score.playerID, _score.value);
                         }
+                        
+                        INVOKE_ON_MAIN_THREAD_END();
                     }];
                     
                     [scoreReporter release];
@@ -1048,6 +1065,8 @@ BOOL IsGameCenterAPIAvailable()
         
         [gkAchievement reportAchievementWithCompletionHandler:^(NSError *error)
          {
+             INVOKE_ON_MAIN_THREAD_BEGIN();
+             
              if (error)
              {
                  NSLog(@"ERROR: Achievement report failed (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
@@ -1066,6 +1085,8 @@ BOOL IsGameCenterAPIAvailable()
              }
              else
                  NSLog(@"INFO: Achievement report successful (ID: %@, %%completed: %.2f)", gkAchievement.identifier, gkAchievement.percentComplete);
+             
+             INVOKE_ON_MAIN_THREAD_END();
          }];
     }
     
@@ -1089,6 +1110,8 @@ BOOL IsGameCenterAPIAvailable()
     
     [GKAchievement loadAchievementsWithCompletionHandler:^(NSArray *achievements, NSError *error)
     {
+        INVOKE_ON_MAIN_THREAD_BEGIN();
+        
         if (error)
         {
             [self handleError:error];
@@ -1129,6 +1152,8 @@ BOOL IsGameCenterAPIAvailable()
             
             [self compareAchievementsWithGameCenter];
         }
+        
+        INVOKE_ON_MAIN_THREAD_END();
     }];
 }
 
@@ -1146,6 +1171,8 @@ BOOL IsGameCenterAPIAvailable()
     leaderboardRequest.range = NSMakeRange(1, 100);
     [leaderboardRequest loadScoresWithCompletionHandler: ^(NSArray *scores, NSError *error)
     {
+        INVOKE_ON_MAIN_THREAD_BEGIN();
+        
         if (error != nil)
         {
             [self handleError:error];
@@ -1164,14 +1191,18 @@ BOOL IsGameCenterAPIAvailable()
                 
                 NSLog(@"INFO: Found score (ID: %@, player: %@, value: %.2f)", aScore.category, aScore.playerID, (double)aScore.value);
                 
-                [leaderboard addScoreWithPlayerID:aScore.playerID andValue:aScore.value];
+                [leaderboard addScoreWithPlayerID:aScore.playerID andValue:aScore.value andDate:aScore.date];
             }
             
             [self compareLeaderboardsWithGameCenter];
         }
+        
+        INVOKE_ON_MAIN_THREAD_END();
     }];
     
     [leaderboardRequest release];
+    
+    [self performSelector:@selector(loadGCLeaderboards) withObject:nil afterDelay:5.0f];
 }
 
 - (void)compareAchievementsWithGameCenter
@@ -1181,6 +1212,8 @@ BOOL IsGameCenterAPIAvailable()
     
     [GKAchievementDescription loadAchievementDescriptionsWithCompletionHandler:^(NSArray *descriptions, NSError *error)
      {
+         INVOKE_ON_MAIN_THREAD_BEGIN();
+         
          if (error)
          {
              [self handleError:error];
@@ -1188,7 +1221,7 @@ BOOL IsGameCenterAPIAvailable()
          else
          {
              assert(descriptions);
-             
+
              if (descriptions.count != achievementsDictionary.count)
                  NSLog(@"WARNING: There are %d local achievements, while GC has %d achievements", achievementsDictionary.count, descriptions.count);
              
@@ -1247,6 +1280,8 @@ BOOL IsGameCenterAPIAvailable()
                  NSLog(@"WARNING: The local player is using a different device");
              }
          }
+         
+         INVOKE_ON_MAIN_THREAD_END();
      }];
 }
 
@@ -1265,13 +1300,9 @@ BOOL IsGameCenterAPIAvailable()
 
 - (void)popupGCAlert
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Game Center Disabled" message:@"Sign in with the Game Center application to enable." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Sign In", nil];
-        [alert show];
-        [alert release];
-        
-    });
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Game Center Disabled" message:@"Sign in with the Game Center application to enable." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Sign In", nil];
+    [alert show];
+    [alert release];
 }
 
 @end

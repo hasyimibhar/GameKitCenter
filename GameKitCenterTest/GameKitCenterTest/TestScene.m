@@ -144,11 +144,11 @@
 - (void)scoresLoaded
 {
     [self saveToFile];
+    [self updateLeaderboard];
 }
 
 - (void)scoreReported:(id<GameKitScore>)score
 {
-    [self updateLeaderboard];
 }
 
 #pragma mark Private methods
@@ -256,6 +256,7 @@
 - (void)reportScore
 {
     [gkCenter reportScore:(double)scoreToReport leaderboardID:@"Leaderboard_1"];
+    [self saveToFile];
     [self updateLeaderboard];
 }
 

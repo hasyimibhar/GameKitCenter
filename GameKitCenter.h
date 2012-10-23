@@ -9,6 +9,9 @@
 #import <Foundation/Foundation.h>
 #import <GameKit/GameKit.h>
 
+#define INVOKE_ON_MAIN_THREAD_BEGIN();  dispatch_async(dispatch_get_main_queue(), ^{
+#define INVOKE_ON_MAIN_THREAD_END();    });
+
 @protocol GameKitScore;
 
 //####################################################################################
@@ -52,7 +55,7 @@
 
 - (id)initWithDictionary:(NSDictionary *)aDictionary;
 
-- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue;
+- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue andDate:(NSDate *)aDate;
 - (void)removeAllScores;
 
 - (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
