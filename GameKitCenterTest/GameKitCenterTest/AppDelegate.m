@@ -11,6 +11,10 @@
 #import "AppDelegate.h"
 #import "TestScene.h"
 
+@interface AppController ()
+- (void)loadActualScene;
+@end
+
 @implementation AppController
 
 @synthesize window=window_, navController=navController_, director=director_;
@@ -73,8 +77,8 @@
 	[CCTexture2D PVRImagesHavePremultipliedAlpha:YES];
 
 	// and add the scene to the stack. The director will run it when it automatically when the view is displayed.
-	[director_ pushScene:[TestScene node]];
-
+	[director_ pushScene:[CCScene node]];
+    [self performSelector:@selector(loadActualScene) withObject:nil afterDelay:0.1f];
 	
 	// Create a Navigation Controller with the Director
 	navController_ = [[UINavigationController alloc] initWithRootViewController:director_];
@@ -88,6 +92,11 @@
 	[window_ makeKeyAndVisible];
 	
 	return YES;
+}
+
+- (void)loadActualScene
+{
+    [director_ replaceScene:[TestScene node]];
 }
 
 // Supported orientations: Landscape. Customize it for your own needs

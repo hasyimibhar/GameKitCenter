@@ -133,6 +133,7 @@
 		1C467F89163623320072EF0D /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C467F88163623320072EF0D /* AppDelegate.m */; };
 		1C467F971636236B0072EF0D /* GameKitCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C467F961636236B0072EF0D /* GameKitCenter.m */; };
 		1C467F9A163624750072EF0D /* TestScene.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C467F99163624750072EF0D /* TestScene.m */; };
+		1C467F9E16362C5F0072EF0D /* GameKitCenter.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1C467F9D16362C5F0072EF0D /* GameKitCenter.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -398,6 +399,7 @@
 		1C467F961636236B0072EF0D /* GameKitCenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = GameKitCenter.m; path = ../../GameKitCenter.m; sourceTree = "<group>"; };
 		1C467F98163624750072EF0D /* TestScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestScene.h; sourceTree = "<group>"; };
 		1C467F99163624750072EF0D /* TestScene.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestScene.m; sourceTree = "<group>"; };
+		1C467F9D16362C5F0072EF0D /* GameKitCenter.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = GameKitCenter.plist; path = Resources/GameKitCenter.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -472,6 +474,7 @@
 		1C467E101636232E0072EF0D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				1C467F9D16362C5F0072EF0D /* GameKitCenter.plist */,
 				1C467E111636232E0072EF0D /* Default.png */,
 				1C467E131636232E0072EF0D /* Default-Landscape~ipad.png */,
 				1C467E151636232E0072EF0D /* fps_images.png */,
@@ -895,6 +898,7 @@
 				1C467E261636232E0072EF0D /* Icon@2x.png in Resources */,
 				1C467E291636232E0072EF0D /* iTunesArtwork in Resources */,
 				1C467F67163623310072EF0D /* ChangeLog in Resources */,
+				1C467F9E16362C5F0072EF0D /* GameKitCenter.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1114,6 +1118,7 @@
 				1C467F94163623320072EF0D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

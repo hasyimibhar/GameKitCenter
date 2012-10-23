@@ -127,33 +127,33 @@ BOOL IsGameCenterAPIAvailable()
 	[super dealloc];
 }
 
-- (BOOL)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue
+- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue
 {
     if (!NSLocationInRange((NSUInteger)aValue, scoreRange))
     {
-        return NO;
+        return nil;
     }
     
-    StandardGameKitScore *existingScore = nil;
-    
-    for (StandardGameKitScore *aScore in scores)
-    {
-        if ([aScore.playerID isEqualToString:aPlayerID])
-        {
-            existingScore = aScore;
-            break;
-        }
-    }
-    
-    if (existingScore && existingScore.value >= aValue)
-    {
-        return NO;
-    }
+//    StandardGameKitScore *existingScore = nil;
+//    
+//    for (StandardGameKitScore *aScore in scores)
+//    {
+//        if ([aScore.playerID isEqualToString:aPlayerID])
+//        {
+//            existingScore = aScore;
+//            break;
+//        }
+//    }
+//    
+//    if (existingScore && existingScore.value >= aValue)
+//    {
+//        return nil;
+//    }
     
     StandardGameKitScore *score = [[[StandardGameKitScore alloc] initWithPlayerID:aPlayerID leaderboardID:identifier date:[NSDate date] value:aValue formattedValue:@"" rank:0] autorelease];
 
     [scores addObject:score];
-    return YES;
+    return score;
 }
 
 - (void)removeAllScores
@@ -164,6 +164,7 @@ BOOL IsGameCenterAPIAvailable()
 - (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range
 {
     NSMutableArray *filteredScores = [NSMutableArray array];
+    
     for (StandardGameKitScore *aScore in scores)
     {
         // 1. check player scope
@@ -184,21 +185,46 @@ BOOL IsGameCenterAPIAvailable()
         [filteredScores addObject:aScore];
     }
     
-    //If out of range, remove the rest
-    while (!NSLocationInRange(filteredScores.count, range))
-        [filteredScores removeLastObject];
-    
-    [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-       
-        StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
-        StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
-        if (score1.value < score2.value)
-            return NSOrderedDescending;
-        if (score1.value > score2.value)
-            return NSOrderedAscending;
-        return NSOrderedSame;
+    if (filteredScores.count > 0)
+    {
+        [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+           
+            StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+            StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+            if (score1.value < score2.value)
+                return NSOrderedDescending;
+            if (score1.value > score2.value)
+                return NSOrderedAscending;
+            return NSOrderedSame;
+            
+        }];
         
-    }];
+        NSMutableDictionary *uniqueScores = [NSMutableDictionary dictionary];
+        for (id<GameKitScore> aScore in filteredScores)
+        {
+            if (uniqueScores[aScore.playerID] == nil)
+                uniqueScores[aScore.playerID] = aScore;
+        }
+        
+        [filteredScores removeAllObjects];
+        [filteredScores addObjectsFromArray:[uniqueScores allValues]];
+        
+        [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            
+            StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+            StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+            if (score1.value < score2.value)
+                return NSOrderedDescending;
+            if (score1.value > score2.value)
+                return NSOrderedAscending;
+            return NSOrderedSame;
+            
+        }];
+        
+        //If out of range, remove the rest
+        while (!NSLocationInRange(filteredScores.count, range))
+            [filteredScores removeLastObject];
+    }
     
     return [NSArray arrayWithArray:filteredScores];
 }
@@ -211,13 +237,13 @@ BOOL IsGameCenterAPIAvailable()
     for (StandardGameKitScore *aScore in scores)
     {
         // 1. check player scope
-        BOOL isFriend = NO;
+        BOOL isFriend = [aScore.playerID isEqualToString:[[GKLocalPlayer localPlayer] playerID]];
         
         if (playerScope == GKLeaderboardPlayerScopeFriendsOnly)
         {
-            for (GKPlayer *aFriend in friends)
+            for (NSString *aFriendID in friends)
             {
-                if ([aScore.playerID isEqualToString:aFriend.playerID])
+                if ([aScore.playerID isEqualToString:aFriendID])
                 {
                     isFriend = YES;
                     break;
@@ -225,15 +251,14 @@ BOOL IsGameCenterAPIAvailable()
             }
         }
         
-        if (!isFriend) continue;
+        if (playerScope == GKLeaderboardPlayerScopeFriendsOnly && !isFriend) continue;
         
         // 2. check time scope
         if (timeScope != GKLeaderboardTimeScopeAllTime)
         {
-            NSDate *currentDate = [NSDate date];
             NSDate *date = aScore.date;
             
-            if (timeScope == GKLeaderboardTimeScopeToday && ![date isEqualToDate:currentDate])
+            if (timeScope == GKLeaderboardTimeScopeToday && [date timeIntervalSinceNow] > 60 * 24)
                 continue;
             else if (timeScope == GKLeaderboardTimeScopeWeek && [date timeIntervalSinceNow] > 60 * 24 * 7)
                 continue;
@@ -242,21 +267,46 @@ BOOL IsGameCenterAPIAvailable()
         [filteredScores addObject:aScore];
     }
     
-    //If out of range, remove the rest
-    while (!NSLocationInRange(filteredScores.count, range))
-        [filteredScores removeLastObject];
-    
-    [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+    if (filteredScores.count > 0)
+    {
+        [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            
+            StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+            StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+            if (score1.value < score2.value)
+                return NSOrderedDescending;
+            if (score1.value > score2.value)
+                return NSOrderedAscending;
+            return NSOrderedSame;
+            
+        }];
         
-        StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
-        StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
-        if (score1.value < score2.value)
-            return NSOrderedDescending;
-        if (score1.value > score2.value)
-            return NSOrderedAscending;
-        return NSOrderedSame;
+        NSMutableDictionary *uniqueScores = [NSMutableDictionary dictionary];
+        for (id<GameKitScore> aScore in filteredScores)
+        {
+            if (uniqueScores[aScore.playerID] == nil)
+                uniqueScores[aScore.playerID] = aScore;
+        }
+
+        [filteredScores removeAllObjects];
+        [filteredScores addObjectsFromArray:[uniqueScores allValues]];
+
+        [filteredScores sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+
+            StandardGameKitScore *score1 = (StandardGameKitScore *)obj1;
+            StandardGameKitScore *score2 = (StandardGameKitScore *)obj2;
+            if (score1.value < score2.value)
+                return NSOrderedDescending;
+            if (score1.value > score2.value)
+                return NSOrderedAscending;
+            return NSOrderedSame;
+            
+        }];
         
-    }];
+        //If out of range, remove the rest
+        while (!NSLocationInRange(filteredScores.count, range))
+            [filteredScores removeLastObject];
+    }
     
     return [NSArray arrayWithArray:filteredScores];
 }
@@ -368,6 +418,11 @@ BOOL IsGameCenterAPIAvailable()
     [aCoder encodeDouble:value forKey:@"Value"];
     [aCoder encodeObject:formattedValue forKey:@"FormattedValue"];
     [aCoder encodeInt:rank forKey:@"Rank"];
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"%@, %@ -> %.2f", leaderboardID, playerID, value];
 }
 
 @end
@@ -832,7 +887,12 @@ BOOL IsGameCenterAPIAvailable()
 {
     id<GameKitLeaderboard> leaderboard = leaderboardDictionary[aLeaderboardID];
     assert(leaderboard);
-    [leaderboard addScoreWithPlayerID:[[GKLocalPlayer localPlayer] playerID] andValue:aScore];
+    id<GameKitScore> score = [leaderboard addScoreWithPlayerID:[[GKLocalPlayer localPlayer] playerID] andValue:aScore];
+    
+    if (score)
+    {
+        [self invokeDelegatesWithSelector:@selector(scoreReported:) andObject:score];
+    }
     
     if (!isGCEnabled) return;
     if (!shouldCommunicateWithGC) return;
@@ -1195,6 +1255,7 @@ BOOL IsGameCenterAPIAvailable()
     if (!isGCEnabled) return;
     if (!shouldCommunicateWithGC) return;
     
+    [self invokeDelegatesWithSelector:@selector(scoresLoaded) andObject:nil];
     [self syncLeaderboardsWithGameCenter];
 }
 

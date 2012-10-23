@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Achievements</key>
+	<array>
+		<dict>
+			<key>Identifier</key>
+			<string>Achievement_One</string>
+			<key>Points</key>
+			<integer>10</integer>
+		</dict>
+		<dict>
+			<key>Identifier</key>
+			<string>Achievement_Two</string>
+			<key>Points</key>
+			<integer>5</integer>
+		</dict>
+		<dict>
+			<key>Identifier</key>
+			<string>Achievement_Three</string>
+			<key>Points</key>
+			<integer>10</integer>
+		</dict>
+	</array>
+	<key>Leaderboards</key>
+	<array>
+		<dict>
+			<key>Identifier</key>
+			<string>Leaderboard_1</string>
+			<key>Name</key>
+			<string>Leaderboard_1</string>
+			<key>ScoreFormatSuffixSingular</key>
+			<string>point</string>
+			<key>ScoreFormatSuffixPlural</key>
+			<string>points</string>
+			<key>ScoreRange</key>
+			<string>{10, 1000}</string>
+			<key>SortOrder</key>
+			<string>HighToLow</string>
+		</dict>
+	</array>
+</dict>
+</plist>

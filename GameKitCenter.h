@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 #import <GameKit/GameKit.h>
 
+@protocol GameKitScore;
+
 //####################################################################################
 // GameKitAchievement protocol
 //####################################################################################
@@ -50,7 +52,7 @@
 
 - (id)initWithDictionary:(NSDictionary *)aDictionary;
 
-- (BOOL)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue;
+- (id<GameKitScore>)addScoreWithPlayerID:(NSString *)aPlayerID andValue:(double)aValue;
 - (void)removeAllScores;
 
 - (NSArray *)scoresWithPlayerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
@@ -129,6 +131,8 @@
 - (void)achievementsLoaded;
 - (void)achievementsReset;
 - (void)achievementCompleted:(id<GameKitAchievement>)achievement;
+- (void)scoresLoaded;
+- (void)scoreReported:(id<GameKitScore>)score;
 @end
 
 //####################################################################################
