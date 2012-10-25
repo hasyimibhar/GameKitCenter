@@ -28,7 +28,7 @@
 	{
         NSDictionary *gameKitCenterDictionary = [NSDictionary dictionaryWithContentsOfFile:[[CCFileUtils sharedFileUtils] fullPathFromRelativePath:@"GameKitCenter.plist"]];
         
-        gkCenter = [[GameKitCenter alloc] initWithDictionary:gameKitCenterDictionary];
+        gkCenter = [[GameKitCenter alloc] initWithAchievements:gameKitCenterDictionary[@"Achievements"] andLeaderboards:gameKitCenterDictionary[@"Leaderboards"]];
         [gkCenter addDelegate:self];
         [self loadFromFile];
         [gkCenter authenticateLocalPlayer];

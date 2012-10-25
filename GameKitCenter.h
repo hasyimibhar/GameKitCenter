@@ -167,7 +167,7 @@
 
 /** Initializes GameKitCenter with a dictionary.
  */
-- (id)initWithDictionary:(NSDictionary *)aDictionary;
+- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray;
 
 /** Creates an autoreleased achievement object with a dictionary.
     Override this method to use your own custom achievement class.

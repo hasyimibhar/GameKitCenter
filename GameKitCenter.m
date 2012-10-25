@@ -533,10 +533,13 @@ BOOL IsGameCenterAPIAvailable()
     }
 }
 
-- (id)initWithDictionary:(NSDictionary *)aDictionary
+- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray
 {
 	if ((self = [super init]))
 	{
+        assert(achievementArray);
+        assert(leaderboardArray);
+        
         // Initialize achievements ------------
         
         achievementsList = [[NSMutableArray alloc] init];
@@ -546,10 +549,7 @@ BOOL IsGameCenterAPIAvailable()
         failedAchievements = [[NSMutableArray alloc] init];
         delegates = [[NSMutableArray alloc] init];
         
-        NSArray *achievementsInfo = aDictionary[@"Achievements"];
-        assert(achievementsInfo);
-        
-        for (NSDictionary *info in achievementsInfo)
+        for (NSDictionary *info in achievementArray)
         {
             id<GameKitAchievement> achievement = [self achievementWithDictionary:info];
             assert([achievementsDictionary objectForKey:achievement.identifier] == nil);
@@ -562,10 +562,7 @@ BOOL IsGameCenterAPIAvailable()
         leaderboardDictionary = [[NSMutableDictionary alloc] init];
         gkScores = [[NSMutableArray alloc] init];
         
-        NSArray *leaderboardsInfo = aDictionary[@"Leaderboards"];
-        assert(leaderboardsInfo);
-        
-        for (NSDictionary *info in leaderboardsInfo)
+        for (NSDictionary *info in leaderboardArray)
         {
             id<GameKitLeaderboard> leaderboard = [self leaderboardWithDictionary:info];
             assert(leaderboardDictionary[leaderboard.identifier] == nil);
@@ -1100,7 +1097,9 @@ BOOL IsGameCenterAPIAvailable()
         NSLog(@"ERROR: Player is not authenticated");
     }
     else
+    {
         NSLog(@"ERROR: %@", error.description);
+    }
 }
 
 - (void)loadGCAchievements
