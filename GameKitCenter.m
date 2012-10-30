@@ -12,14 +12,26 @@
 BOOL IsGameCenterAPIAvailable()
 {
     // Check for presence of GKLocalPlayer class.
-    BOOL localPlayerClassAvailable = (NSClassFromString(@"GKLocalPlayer")) != nil;
+    BOOL isClassAvailable = (NSClassFromString(@"GKLocalPlayer")) != nil;
     
     // The device must be running iOS 4.1 or later.
-    NSString *reqSysVer = @"4.1";
-    NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
-    BOOL osVersionSupported = ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending);
+    NSString *requiredVersion = @"4.1";
+    NSString *currentVersion = [[UIDevice currentDevice] systemVersion];
+    BOOL isOSVersionSupported = ([currentVersion compare:requiredVersion options:NSNumericSearch] != NSOrderedAscending);
     
-    return (localPlayerClassAvailable && osVersionSupported);
+    return (isClassAvailable && isOSVersionSupported);
+}
+
+BOOL IsGKGameCenterControllerDelegateAvailable()
+{
+    BOOL isProtocolAvailable = (NSProtocolFromString(@"GKGameCenterControllerDelegate")) != nil;
+    
+    // The device must be running iOS 6.0 or later.
+    NSString *requiredVersion = @"6.0";
+    NSString *currentVersion = [[UIDevice currentDevice] systemVersion];
+    BOOL isOSVersionSupported = ([currentVersion compare:requiredVersion options:NSNumericSearch] != NSOrderedAscending);
+    
+    return (isProtocolAvailable && isOSVersionSupported);
 }
 
 //####################################################################################
@@ -533,12 +545,14 @@ BOOL IsGameCenterAPIAvailable()
     }
 }
 
-- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray
+- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray andViewController:(UIViewController *)aViewController
 {
 	if ((self = [super init]))
 	{
         assert(achievementArray);
         assert(leaderboardArray);
+        
+        viewController = aViewController;
         
         // Initialize achievements ------------
         
@@ -938,6 +952,66 @@ BOOL IsGameCenterAPIAvailable()
     return [leaderboard scoresWithPlayerScope:playerScope timeScope:timeScope range:range];
 }
 
+- (void)showAchievements
+{
+    if (viewController)
+    {
+        if (IsGKGameCenterControllerDelegateAvailable())
+        {
+            GKGameCenterViewController *gameCenterController = [[GKGameCenterViewController alloc] init];
+            if (gameCenterController != nil)
+            {
+                gameCenterController.gameCenterDelegate = self;
+                gameCenterController.viewState = GKGameCenterViewControllerStateAchievements;
+                [viewController presentViewController:gameCenterController animated:YES completion:nil];
+            }
+        }
+        else
+        {
+            GKAchievementViewController *achievementsViewController = [[GKAchievementViewController alloc] init];
+            if (achievementsViewController != nil)
+            {
+                achievementsViewController.achievementDelegate = self;
+                [viewController presentViewController: achievementsViewController animated: YES completion:nil];
+            }
+            [achievementsViewController release];
+        }
+    }
+}
+
+- (void)showLeaderboard:(NSString *)aLeaderboardID
+{
+    if (viewController)
+    {
+        assert(aLeaderboardID);
+        
+        if (IsGKGameCenterControllerDelegateAvailable())
+        {
+            GKGameCenterViewController *gameCenterController = [[GKGameCenterViewController alloc] init];
+            if (gameCenterController != nil)
+            {
+                gameCenterController.gameCenterDelegate = self;
+                gameCenterController.viewState = GKGameCenterViewControllerStateLeaderboards;
+                gameCenterController.leaderboardTimeScope = GKLeaderboardTimeScopeToday;
+                gameCenterController.leaderboardCategory = aLeaderboardID;
+                [viewController presentViewController:gameCenterController animated:YES completion:nil];
+            }
+        }
+        else
+        {
+            GKLeaderboardViewController *leaderboardViewController = [[GKLeaderboardViewController alloc] init];
+            if (leaderboardViewController != nil)
+            {
+                leaderboardViewController.leaderboardDelegate = self;
+                leaderboardViewController.timeScope = GKLeaderboardTimeScopeToday;
+                leaderboardViewController.category = aLeaderboardID;
+                [viewController presentViewController: leaderboardViewController animated: YES completion:nil];
+            }
+            [leaderboardViewController release];
+        }
+    }
+}
+
 //####################################################################################
 #pragma mark Protocol methods
 #pragma mark -
@@ -950,6 +1024,21 @@ BOOL IsGameCenterAPIAvailable()
     {
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"gamecenter:"]];
     }
+}
+
+- (void)achievementViewControllerDidFinish:(GKAchievementViewController *)achievementsViewController
+{
+    [viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)leaderboardViewControllerDidFinish:(GKLeaderboardViewController *)leaderboardViewController
+{
+    [viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)gameCenterViewControllerDidFinish:(GKGameCenterViewController *)gameCenterViewController
+{
+    [viewController dismissViewControllerAnimated:YES completion:nil];
 }
 
 //####################################################################################

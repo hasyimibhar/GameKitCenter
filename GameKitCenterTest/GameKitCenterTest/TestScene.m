@@ -7,6 +7,7 @@
 //
 
 #import "TestScene.h"
+#import "AppDelegate.h"
 
 @interface TestScene ()
 - (void)saveToFile;
@@ -28,7 +29,10 @@
 	{
         NSDictionary *gameKitCenterDictionary = [NSDictionary dictionaryWithContentsOfFile:[[CCFileUtils sharedFileUtils] fullPathFromRelativePath:@"GameKitCenter.plist"]];
         
-        gkCenter = [[GameKitCenter alloc] initWithAchievements:gameKitCenterDictionary[@"Achievements"] andLeaderboards:gameKitCenterDictionary[@"Leaderboards"]];
+        AppController *appDelegate = (AppController *)[[UIApplication sharedApplication] delegate];
+        UIViewController *viewController = appDelegate.navController;
+        
+        gkCenter = [[GameKitCenter alloc] initWithAchievements:gameKitCenterDictionary[@"Achievements"] andLeaderboards:gameKitCenterDictionary[@"Leaderboards"] andViewController:viewController];
         [gkCenter addDelegate:self];
         [self loadFromFile];
         [gkCenter authenticateLocalPlayer];
@@ -87,6 +91,22 @@
         decreaseScoreLabel.position = ccp(winSize.width * 3 / 4 - 100, 50);
         decreaseScoreLabel.label.color = ccBLACK;
         [menu addChild:decreaseScoreLabel];
+        
+        CCMenuItemLabel *showAchievementsLabel = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Show Achievements" fontName:@"Marker Felt" fontSize:36] block:^(id sender)
+        {
+            [gkCenter showAchievements];
+        }];
+        showAchievementsLabel.position = ccp(winSize.width / 4, winSize.height / 2 + 50);
+        showAchievementsLabel.label.color = ccBLACK;
+        [menu addChild:showAchievementsLabel];
+        
+        CCMenuItemLabel *showLeaderboardLabel = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Show Leaderboard" fontName:@"Marker Felt" fontSize:36] block:^(id sender)
+                                                  {
+                                                      [gkCenter showLeaderboard:@"Leaderboard_1"];
+                                                  }];
+        showLeaderboardLabel.position = ccp(winSize.width / 4, winSize.height / 2 - 50);
+        showLeaderboardLabel.label.color = ccBLACK;
+        [menu addChild:showLeaderboardLabel];
         
         [self updateLeaderboard];
 	}

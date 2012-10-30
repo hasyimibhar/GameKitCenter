@@ -142,7 +142,7 @@
 // GameKitCenter class
 //####################################################################################
 
-@interface GameKitCenter : NSObject<UIAlertViewDelegate>
+@interface GameKitCenter : NSObject<UIAlertViewDelegate, GKAchievementViewControllerDelegate, GKLeaderboardViewControllerDelegate, GKGameCenterControllerDelegate>
 {
     GKLocalPlayer *localPlayer;
     
@@ -163,11 +163,14 @@
     BOOL hasChangedDevice;
     
     NSMutableArray *delegates;
+    
+    UIViewController *viewController;
 }
 
 /** Initializes GameKitCenter with a dictionary.
+    
  */
-- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray;
+- (id)initWithAchievements:(NSArray *)achievementArray andLeaderboards:(NSArray *)leaderboardArray andViewController:(UIViewController *)aViewController;
 
 /** Creates an autoreleased achievement object with a dictionary.
     Override this method to use your own custom achievement class.
@@ -235,9 +238,21 @@
  */
 - (void)reportScore:(double)aScore leaderboardID:(NSString *)aLeaderboardID;
 
+/** Returns scores associated with the specified leaderboard.
+ */
 - (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerIDs:(NSArray *)playerIDs timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
 
+/** Returns scores associated with the specified leaderboard.
+ */
 - (NSArray *)scoresWithLeaderboardID:(NSString *)aLeaderboardID playerScope:(GKLeaderboardPlayerScope)playerScope timeScope:(GKLeaderboardTimeScope)timeScope range:(NSRange)range;
+
+/** Shows the standard achievements view.
+ */
+- (void)showAchievements;
+
+/** Shows the standard leaderboard view.
+ */
+- (void)showLeaderboard:(NSString *)aLeaderboardID;
 
 @property (readwrite, nonatomic) BOOL shouldCommunicateWithGC;
 
