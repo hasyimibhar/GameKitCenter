@@ -35,7 +35,7 @@
         self.position = ccp(winSize.width / 2, winSize.height);
         
         CCLayerColor *layerColor = [CCLayerColor layerWithColor:ccc4(100, 100, 100, 255) width:300 height:40];
-        layerColor.ignoreAnchorPointForPosition = NO;
+        [layerColor setIsRelativeAnchorPoint:YES];
         layerColor.anchorPoint                  = ccp(0.5f, 0);
         [self addChild:layerColor];
         
