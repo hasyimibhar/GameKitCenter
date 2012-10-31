@@ -337,7 +337,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
     
     NSLog(@"INFO: Loading saved achievements...");
     NSDictionary *_achievements = dictionary[@"Achievements"];
-    assert(_achievements);
+//    assert(_achievements);
     
     for (NSString *identifier in [_achievements allKeys])
     {
@@ -357,7 +357,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
     
     NSLog(@"INFO: Loading saved leaderboards...");
     NSDictionary *_leaderboards = dictionary[@"Leaderboards"];
-    assert(_leaderboards);
+//    assert(_leaderboards);
     
     for (NSString *identifier in [_leaderboards allKeys])
     {
