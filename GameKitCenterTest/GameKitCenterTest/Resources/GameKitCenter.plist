@@ -9,6 +9,8 @@
 			<string>Achievement_One</string>
 			<key>Title</key>
 			<string>Achievement One</string>
+			<key>IconFileName</key>
+			<string>AchievementIcon.png</string>
 			<key>Points</key>
 			<integer>10</integer>
 		</dict>
@@ -17,6 +19,8 @@
 			<string>Achievement_Two</string>
 			<key>Title</key>
 			<string>Achievement Two</string>
+			<key>IconFileName</key>
+			<string>AchievementIcon.png</string>
 			<key>Points</key>
 			<integer>5</integer>
 		</dict>
@@ -25,6 +29,8 @@
 			<string>Achievement_Three</string>
 			<key>Title</key>
 			<string>Achievement Three</string>
+			<key>IconFileName</key>
+			<string>AchievementIcon.png</string>
 			<key>Points</key>
 			<integer>10</integer>
 		</dict>

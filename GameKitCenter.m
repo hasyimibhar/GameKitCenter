@@ -1024,7 +1024,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
 
 @implementation StandardGameKitAchievement
 
-@synthesize identifier, title, percentageCompleted, points;
+@synthesize identifier, title, iconFileName, percentageCompleted, points;
 
 + (id)achievementWithDictionary:(NSDictionary *)dictionary
 {
@@ -1041,6 +1041,8 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
         title = [[dictionary objectForKey:@"Title"] copy];
         assert(title);
         
+        iconFileName = [[dictionary objectForKey:@"IconFileName"] copy];
+        
         points = [[dictionary objectForKey:@"Points"] intValue];
         assert(points > 0 && points <= 100);
         
@@ -1052,6 +1054,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
 
 - (void)dealloc
 {
+    [iconFileName release];
     [title release];
     [identifier release];
 	[super dealloc];

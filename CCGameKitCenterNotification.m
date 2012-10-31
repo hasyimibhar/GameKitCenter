@@ -29,6 +29,8 @@
 {
 	if ((self = [super init]))
 	{
+        StandardGameKitAchievement *achievement = (StandardGameKitAchievement *)aAchievement;
+        
         CGSize winSize = [[CCDirector sharedDirector] winSize];
         
         // This panel will appear in the center of the screen
@@ -39,12 +41,19 @@
         layerColor.anchorPoint                  = ccp(0.5f, 0);
         [self addChild:layerColor];
         
-        CCLabelTTF *title = [CCLabelTTF labelWithString:aAchievement.title fontName:@"Marker Felt" fontSize:20];
+        if (achievement.iconFileName)
+        {
+            CCSprite *icon = [CCSprite spriteWithFile:achievement.iconFileName];
+            icon.position = ccp(20, layerColor.contentSize.height / 2);
+            [layerColor addChild:icon];
+        }
+            
+        CCLabelTTF *title = [CCLabelTTF labelWithString:achievement.title fontName:@"Marker Felt" fontSize:20];
         title.anchorPoint = ccp(0, 0.5f);
-        title.position = ccp(10, layerColor.contentSize.height / 2);
+        title.position = ccp(40, layerColor.contentSize.height / 2);
         [layerColor addChild:title];
         
-        CCLabelTTF *pointsLabel = [CCLabelTTF labelWithString:[NSString stringWithFormat:@"%d", aAchievement.points] fontName:@"Marker Felt" fontSize:20];
+        CCLabelTTF *pointsLabel = [CCLabelTTF labelWithString:[NSString stringWithFormat:@"%d", achievement.points] fontName:@"Marker Felt" fontSize:20];
         pointsLabel.anchorPoint = ccp(1, 0.5f);
         pointsLabel.position = ccp(layerColor.contentSize.width - 10, layerColor.contentSize.height / 2);
         [layerColor addChild:pointsLabel];

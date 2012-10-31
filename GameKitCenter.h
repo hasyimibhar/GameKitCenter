@@ -210,11 +210,14 @@
 {
     NSString    *identifier;
     NSString    *title;
+    NSString    *iconFileName;
     double      percentageCompleted;
     int         points;
 }
 
 + (id)achievementWithDictionary:(NSDictionary *)dictionary;
+
+@property (readonly, copy, nonatomic) NSString * iconFileName;
 @end
 
 
