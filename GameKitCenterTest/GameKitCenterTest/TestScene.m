@@ -9,6 +9,8 @@
 #import "TestScene.h"
 #import "AppDelegate.h"
 
+#import "CCGameKitCenterNotification.h"
+
 @interface TestScene ()
 - (void)saveToFile;
 - (void)loadFromFile;
@@ -37,6 +39,11 @@
         [self loadFromFile];
         [gkCenter authenticateLocalPlayer];
         
+        CCGKCNotification *notification = [CCGKCNotification node];
+        notification.panelClass = CCGKCNotificationPanel.class;
+        [gkCenter addDelegate:notification];
+        [[CCDirector sharedDirector] setNotificationNode:notification];
+        
         menu = [CCMenu menuWithItems:nil];
         menu.position = CGPointZero;
         menu.anchorPoint = CGPointZero;
@@ -51,6 +58,38 @@
         title.color = ccBLACK;
         title.position = ccp(winSize.width / 2, winSize.height - 50);
         [self addChild:title];
+        
+        
+        
+        
+        CCMenuItemLabel *completeAchievement1Label = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Complete Achievement One" fontName:@"Marker Felt" fontSize:28] block:^(id sender)
+        {
+            [gkCenter reportAchievementWithIdentifier:@"Achievement_One" percentageCompleted:100.0];
+            [gkCenter reportQueuedAchievements];
+        }];
+        completeAchievement1Label.color = ccBLACK;
+        completeAchievement1Label.position = ccp(winSize.width / 4, 50);
+        [menu addChild:completeAchievement1Label];
+        
+        CCMenuItemLabel *completeAchievement2Label = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Complete Achievement Two" fontName:@"Marker Felt" fontSize:28] block:^(id sender)
+        {
+            [gkCenter reportAchievementWithIdentifier:@"Achievement_Two" percentageCompleted:100.0];
+            [gkCenter reportQueuedAchievements];
+        }];
+        completeAchievement2Label.color = ccBLACK;
+        completeAchievement2Label.position = ccp(winSize.width / 4, 100);
+        [menu addChild:completeAchievement2Label];
+        
+        CCMenuItemLabel *resetAchievementsLabel = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Reset Achievements" fontName:@"Marker Felt" fontSize:28] block:^(id sender)
+        {
+            [gkCenter resetAchievements];
+        }];
+        resetAchievementsLabel.color = ccBLACK;
+        resetAchievementsLabel.position = ccp(winSize.width / 4, 150);
+        [menu addChild:resetAchievementsLabel];
+
+        
+        
         
         currentTimeScope = GKLeaderboardTimeScopeAllTime;
         timeScopeLabel = [CCMenuItemLabel itemWithLabel:[CCLabelTTF labelWithString:@"Time scope: All time" fontName:@"Marker Felt" fontSize:20] target:self selector:@selector(changeTimeScope)];
@@ -123,7 +162,6 @@
 - (void)onEnter
 {
 	[super onEnter];
-
 }
 
 - (void)onExit
@@ -136,39 +174,10 @@
 #pragma mark Protocol methods
 #pragma mark -
 
-- (void)localPlayerAuthenticated
-{
-    
-}
-
-- (void)achievementsLoaded
-{
-    
-}
-
-- (void)achievementsReset
-{
-    
-}
-
-- (void)achievementProgressed:(id<GameKitAchievement>)achievement
-{
-    
-}
-
-- (void)achievementCompleted:(id<GameKitAchievement>)achievement
-{
-    
-}
-
 - (void)scoresLoaded
 {
     [self saveToFile];
     [self updateLeaderboard];
-}
-
-- (void)scoreReported:(id<GameKitScore>)score
-{
 }
 
 #pragma mark Private methods

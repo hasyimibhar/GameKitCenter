@@ -30,6 +30,7 @@
  ******************************************/
 
 @protocol GameKitCenterDelegate<NSObject>
+@optional
 - (void)localPlayerAuthenticated;
 - (void)achievementProgressed:(id<GameKitAchievement>)achievement;
 - (void)achievementsLoaded;
@@ -184,8 +185,13 @@
 - (void)progressFlushed;
 
 @property (readonly, copy, nonatomic) NSString * identifier;
+@property (readonly, copy, nonatomic) NSString * title;
 @property (readwrite, nonatomic) double percentageCompleted;
 @property (readonly, nonatomic) int points;
+
+@optional
+@property (readonly, copy, nonatomic) NSString * preEarnedDescription;
+@property (readonly, copy, nonatomic) NSString * earnedDescription;
 @end
 
 
@@ -202,9 +208,10 @@
 
 @interface StandardGameKitAchievement : NSObject<GameKitAchievement>
 {
-    NSString *identifier;
-    double percentageCompleted;
-    int points;
+    NSString    *identifier;
+    NSString    *title;
+    double      percentageCompleted;
+    int         points;
 }
 
 + (id)achievementWithDictionary:(NSDictionary *)dictionary;

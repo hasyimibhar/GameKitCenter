@@ -666,7 +666,10 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
 {
     for (id<GameKitCenterDelegate> d in delegates)
     {
-        [d performSelector:selector withObject:object];
+        if ([d respondsToSelector:selector])
+        {
+            [d performSelector:selector withObject:object];
+        }
     }
 }
 
@@ -1021,7 +1024,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
 
 @implementation StandardGameKitAchievement
 
-@synthesize identifier, percentageCompleted, points;
+@synthesize identifier, title, percentageCompleted, points;
 
 + (id)achievementWithDictionary:(NSDictionary *)dictionary
 {
@@ -1035,6 +1038,9 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
         identifier = [[dictionary objectForKey:@"Identifier"] copy];
         assert(identifier);
         
+        title = [[dictionary objectForKey:@"Title"] copy];
+        assert(title);
+        
         points = [[dictionary objectForKey:@"Points"] intValue];
         assert(points > 0 && points <= 100);
         
@@ -1046,6 +1052,7 @@ BOOL IsGKGameCenterControllerDelegateAvailable()
 
 - (void)dealloc
 {
+    [title release];
     [identifier release];
 	[super dealloc];
 }
